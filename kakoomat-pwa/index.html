@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kakoomat</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2a1a1f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#2a1a1f;--panel:#3a252b;--ink:#fbeee0;--mut:#c9a99a;--mint:#7fe3c0;--gold:#ffc857;--bad:#ff6b5e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:560px;padding:18px 12px 28px;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:2.2rem}
+.sub{margin:4px 0 0;color:var(--mut);line-height:1.4}
+.bar{display:flex;gap:8px}
+.stat{flex:1;background:var(--panel);border-radius:12px;padding:8px 10px}
+.stat b{display:block;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mut);font-size:.78rem}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--panel);border:3px solid #55353d;border-radius:20px;padding:8px}
+.cell{aspect-ratio:1;background:var(--bg);border-radius:12px;padding:5px;display:grid}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.sm,.tile{border:0;cursor:pointer;color:#2a1a1f;background:var(--tint);font-family:Georgia,serif;font-weight:700}
+.sm{border-radius:8px;font-size:clamp(.75rem,3.6vw,1.1rem);padding:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.tile{border-radius:10px;font-size:clamp(1.6rem,8vw,2.6rem);box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
+.tile:disabled{cursor:default}
+.sm:focus-visible,.tile:focus-visible,.go:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.ok{outline:3px solid var(--mint);outline-offset:1px}
+.part{outline:3px dashed var(--gold);outline-offset:1px}
+.no{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.final .cell{box-shadow:0 0 0 3px var(--gold)}
+.msg{min-height:1.4em;text-align:center;color:var(--mut)}
+.go{background:var(--gold);color:#2a1a1f;border:0;border-radius:14px;padding:14px;font:700 1.1rem "Trebuchet MS",system-ui,sans-serif;cursor:pointer}
+.setup{display:flex;flex-direction:column;gap:10px}
+.lvls{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.lvl{background:var(--panel);color:var(--ink);border:3px solid transparent;border-radius:12px;padding:10px 6px;font:700 1rem "Trebuchet MS",system-ui,sans-serif;cursor:pointer}
+.lvl[aria-pressed="true"]{border-color:var(--gold);background:#4a2f37}
+.lvl small{display:block;color:var(--mut);font-weight:400;margin-top:2px}
+.lvl:focus-visible,.name input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.hint{margin:0;color:var(--mut);text-align:center;font-size:.9rem}
+.name{display:flex;align-items:center;gap:8px;color:var(--mut)}
+.name input{flex:1;min-width:0;background:var(--panel);color:var(--ink);border:2px solid #55353d;border-radius:10px;padding:10px;font:inherit}
+.hs{background:var(--panel);border-radius:14px;padding:12px 14px}
+.hs h2{margin:0 0 8px;font-family:Georgia,serif;font-size:1.15rem}
+.hs ol{margin:0;padding-left:1.6em}
+.hs li{padding:3px 0;font-variant-numeric:tabular-nums}
+.hs li.me{color:var(--gold)}
+.hs p{margin:0;color:var(--mut)}
+.grid.flower{display:block;position:relative;aspect-ratio:1;padding:0}
+.flower .cell{position:absolute;width:36%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center}
+.flower .mini{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:3px;width:86%}
+.flower .sm{flex:0 0 calc((100% - 6px)/3);aspect-ratio:1;border-radius:50%;font-size:clamp(.8rem,3.8vw,1.15rem)}
+.flower .tile{width:64%;aspect-ratio:1;border-radius:50%;font-size:clamp(1.6rem,9vw,2.8rem)}
+.core{position:absolute;left:50%;top:50%;width:20%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:var(--gold);color:#2a1a1f;display:flex;align-items:center;justify-content:center;font:700 clamp(1rem,5vw,1.6rem) Georgia,serif}
+.hide{display:none}
+@media (prefers-reduced-motion:reduce){.no{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Kakoomat 9</h1>
+    <p class="sub">Hitta summan i varje ruta. Sedan bildar dina svar ett sista pussel.</p>
+  </header>
+  <div class="bar">
+    <div class="stat"><b id="time">0</b><span>sekunder</span></div>
+    <div class="stat"><b id="err">0</b><span id="penlbl">fel (+5 s)</span></div>
+    <div class="stat"><b id="best">–</b><span>personbästa</span></div>
+  </div>
+  <section class="setup" id="setup">
+    <div class="lvls" id="lvls" role="group" aria-label="Svårighetsgrad"></div>
+    <p class="hint" id="lvlinfo"></p>
+    <label class="name">Ditt namn <input id="name" maxlength="12" autocomplete="nickname" placeholder="Spelare"></label>
+  </section>
+  <div class="grid hide" id="grid"></div>
+  <div class="msg" id="msg">Välj svårighetsgrad och starta.</div>
+  <button class="go" id="go">Starta</button>
+  <section class="hs" id="hs"></section>
+</main>
+<script>
+(function(){
+  var TINT=['#ff8fb1','#ffc857','#7fe3c0','#b9a4ff','#ffa970','#79c8ff','#c9f06b','#ff7f7f','#e6b3ff'];
+  var cells=[],fin=null,phase='idle',locked=false,mistakes=0,t0=0,timer=null,finReveal=false,lastId=0,MAX=20,PEN=3,DUP=false,SZ=9;
+  var LV=[{k:'f5',n:'Mycket lätt',max:10,pen:2,sz:5},{k:'l1',n:'Lätt',max:20,pen:3},{k:'l2',n:'Medel',max:50,pen:5},{k:'l3',n:'Svår',max:99,pen:10}];
+  var $=function(id){return document.getElementById(id)};
+  var db={hs:{},pb:{}};
+  try{var raw=localStorage.getItem('kakoomat9-v2');if(raw)db=JSON.parse(raw)||db}catch(e){}
+  db.hs=db.hs||{};db.pb=db.pb||{};
+  var lv=(db.lv>=0&&db.lv<4)?db.lv:0;
+  function save(){try{localStorage.setItem('kakoomat9-v2',JSON.stringify(db))}catch(e){}}
+  function playerName(){return ($('name').value||'').trim()||'Spelare'}
+  function pbKey(n){return n.toLowerCase()+'|'+LV[lv].k}
+  function updBest(){var p=db.pb[pbKey(playerName())];$('best').textContent=p?p+' s':'–'}
+  function renderHS(){
+    var list=db.hs[LV[lv].k]||[],h=$('hs');
+    h.innerHTML='<h2>Topplista – '+LV[lv].n+'</h2>';
+    if(!list.length){var p=document.createElement('p');p.textContent='Inga resultat än. Bli först!';h.appendChild(p);return}
+    var ol=document.createElement('ol');
+    list.forEach(function(e){
+      var li=document.createElement('li');if(e.id===lastId)li.className='me';
+      var s=document.createElement('span');s.textContent=e.n;
+      var t=document.createElement('b');t.textContent=e.t+' s';t.style.float='right';
+      li.appendChild(s);li.appendChild(t);ol.appendChild(li);
+    });
+    h.appendChild(ol);
+  }
+  function renderLv(){
+    var box=$('lvls');box.innerHTML='';
+    LV.forEach(function(l,i){
+      var b=document.createElement('button');b.className='lvl';b.setAttribute('aria-pressed',i===lv?'true':'false');
+      b.innerHTML=l.n+'<small>1–'+l.max+'</small>';
+      b.onclick=function(){lv=i;db.lv=i;save();renderLv();updBest();renderHS()};
+      box.appendChild(b);
+    });
+    $('lvlinfo').textContent='Tal mellan 1 och '+LV[lv].max+'. Varje fel ger +'+LV[lv].pen+' sekunder.'+(LV[lv].sz===5?' Fem kronblad med fem tal vardera.':'');
+    $('penlbl').textContent='fel (+'+LV[lv].pen+' s)';
+  }
+  $('name').value=db.name||'';$('name').oninput=updBest;
+  renderLv();updBest();renderHS();
+
+  function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=rnd(0,i),t=a[i];a[i]=a[j];a[j]=t}return a}
+  function sols(n){var r=[],seen={};for(var t=0;t<n.length;t++)for(var i=0;i<n.length;i++)for(var j=i+1;j<n.length;j++){
+    if(i!==t&&j!==t&&n[i]+n[j]===n[t]&&!seen[n[t]]){seen[n[t]]=1;r.push({t:t,a:i,b:j})}}return r}
+
+  var bad={};
+  // Bygger en ruta runt svaret c: lägger till tal ett i taget och behåller bara de som inte skapar fler lösningar.
+  function genCell(c){
+    if(c<3||bad[c])return null;
+    for(var k=0;k<300;k++){
+      var a=rnd(1,c-1),b=c-a;if(a===b)continue;
+      var set=[a,b,c],cand=[];
+      for(var v=1;v<=MAX;v++){if(v===c)continue;if(DUP)cand.push(v,v);else if(v!==a&&v!==b)cand.push(v)}
+      shuffle(cand);
+      for(var i=0;i<cand.length&&set.length<SZ;i++){
+        set.push(cand[i]);
+        if(sols(set).length!==1)set.pop();
+      }
+      if(set.length===SZ){
+        shuffle(set);var s=sols(set);
+        return {nums:set,t:s[0].t,a:s[0].a,b:s[0].b,solved:false,reveal:false};
+      }
+    }
+    bad[c]=true;return null;
+  }
+  function build(){
+    bad={};
+    for(var k=0;k<200000;k++){
+      var vals=[];
+      while(vals.length<SZ){var v=rnd(3,MAX);if(DUP||vals.indexOf(v)<0)vals.push(v)}
+      var s=sols(vals);if(s.length!==1)continue;
+      if(vals.filter(function(x){return x===vals[s[0].t]}).length!==1)continue;
+      var cs=[],ok=true;
+      for(var i=0;i<SZ;i++){var c=genCell(vals[i]);if(!c){ok=false;break}cs.push(c)}
+      if(ok){fin={vals:vals,t:s[0].t,a:s[0].a,b:s[0].b};cells=cs;return}
+    }
+    fin=null;
+  }
+
+  function render(){
+    var g=$('grid');g.innerHTML='';g.className='grid'+(phase==='final'||phase==='done'?' final':'')+(SZ===5?' flower':'');
+    cells.forEach(function(c,ci){
+      var box=document.createElement('div');box.className='cell';box.style.setProperty('--tint',TINT[ci]);
+      if(SZ===5){var ang=(-90+360/SZ*ci)*Math.PI/180;box.style.left=(50+32*Math.cos(ang))+'%';box.style.top=(50+32*Math.sin(ang))+'%'}
+      if(c.solved&&!c.reveal){
+        var t=document.createElement('button');t.className='tile';t.textContent=c.nums[c.t];
+        t.disabled=phase!=='final';
+        t.setAttribute('aria-label','Svar '+c.nums[c.t]);
+        if(finReveal){if(ci===fin.t)t.classList.add('ok');else if(ci===fin.a||ci===fin.b)t.classList.add('part')}
+        t.onclick=function(){pickFinal(ci,t)};
+        box.appendChild(t);
+      }else{
+        var m=document.createElement('div');m.className='mini';
+        c.nums.forEach(function(v,i){
+          var s=document.createElement('button');s.className='sm';s.textContent=v;
+          if(c.reveal){if(i===c.t)s.classList.add('ok');else if(i===c.a||i===c.b)s.classList.add('part')}
+          s.onclick=function(){pickCell(ci,i,s)};
+          m.appendChild(s);
+        });
+        box.appendChild(m);
+      }
+      g.appendChild(box);
+    });
+    if(SZ===5){
+      var core=document.createElement('div');core.className='core';
+      core.textContent=(phase==='final'||phase==='done')?'★':cells.filter(function(x){return x.solved}).length+'/'+SZ;
+      g.appendChild(core);
+    }
+  }
+
+  function wrong(btn){
+    mistakes++;$('err').textContent=mistakes;
+    btn.classList.remove('no');void btn.offsetWidth;btn.classList.add('no');
+    $('msg').textContent='Fel tal. Plus '+PEN+' sekunder.';
+  }
+  function pickCell(ci,i,btn){
+    var c=cells[ci];
+    if(locked||phase!=='cells'||c.solved)return;
+    if(i!==c.t){wrong(btn);return}
+    locked=true;c.solved=true;c.reveal=true;
+    $('msg').textContent=c.nums[c.a]+' + '+c.nums[c.b]+' = '+c.nums[c.t];
+    render();
+    setTimeout(function(){
+      c.reveal=false;locked=false;
+      if(cells.every(function(x){return x.solved})){
+        phase='final';$('msg').textContent='Sista pusslet: ett av dina '+SZ+' svar är summan av två andra.';
+      }else $('msg').textContent='';
+      render();
+    },800);
+  }
+  function pickFinal(ci,btn){
+    if(locked||phase!=='final')return;
+    if(ci!==fin.t){wrong(btn);return}
+    phase='done';finReveal=true;clearInterval(timer);
+    var total=Math.round((Date.now()-t0)/1000)+mistakes*PEN;
+    var nm=playerName(),key=pbKey(nm),prev=db.pb[key],rec=!prev||total<prev,k=LV[lv].k;
+    if(rec)db.pb[key]=total;
+    var list=db.hs[k]||[];lastId=Date.now();list.push({n:nm,t:total,id:lastId});
+    list.sort(function(a,b){return a.t-b.t});db.hs[k]=list.slice(0,10);
+    var top=db.hs[k].some(function(e){return e.id===lastId});
+    db.name=nm;save();updBest();renderHS();
+    $('time').textContent=total;
+    $('msg').textContent=fin.vals[fin.a]+' + '+fin.vals[fin.b]+' = '+fin.vals[fin.t]+'. Klart på '+total+' s'+(rec?' – nytt personbästa!':'.')+(top?' Du är med på topplistan.':'');
+    $('go').textContent='Spela igen';$('go').classList.remove('hide');
+    $('setup').classList.remove('hide');$('hs').classList.remove('hide');
+    render();
+  }
+
+  function start(){
+    $('msg').textContent='Skapar pussel...';
+    setTimeout(function(){
+      MAX=LV[lv].max;PEN=LV[lv].pen;DUP=!!LV[lv].dup;SZ=LV[lv].sz||9;db.name=playerName();save();
+      build();
+      if(!fin){$('msg').textContent='Kunde inte skapa pusslet. Försök igen.';return}
+      phase='cells';locked=false;mistakes=0;finReveal=false;
+      $('err').textContent=0;$('time').textContent=0;
+      $('grid').classList.remove('hide');$('go').classList.add('hide');
+      $('setup').classList.add('hide');$('hs').classList.add('hide');
+      $('msg').textContent='Hitta talet som är summan av två andra i varje ruta.';
+      render();t0=Date.now();clearInterval(timer);
+      timer=setInterval(function(){$('time').textContent=Math.round((Date.now()-t0)/1000)},250);
+    },30);
+  }
+  $('go').onclick=start;
+})();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}</script>
+</body>
+</html>
